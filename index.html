@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BAU Practical Label Generator</title>
+    <title>A4 Batch Practical Notebook Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         /* --- Base & Mobile First Styling --- */
@@ -26,6 +26,8 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
 
         .preview-pane {
@@ -65,21 +67,22 @@
         .btn-print { background-color: #059669; }
         .btn-print:hover { background-color: #047857; }
 
+        /* Developer Footer Styling */
+        .developer-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+        }
+        .developer-footer strong { color: #374151; }
+
         /* --- Desktop Styling --- */
         @media (min-width: 768px) {
             body { flex-direction: row; height: 100vh; overflow: hidden; }
             .controls-pane { width: 400px; height: 100%; overflow-y: auto; }
             .preview-pane { flex-grow: 1; height: 100%; overflow-y: auto; }
-        }
-        /* --- Mobile Scale Fix --- */
-        @media (max-width: 767px) {
-            .preview-pane {
-                align-items: flex-start; /* Stops the left edge from getting clipped */
-                overflow-x: auto; /* Adds a scrollbar just in case it is still slightly too wide */
-            }
-            .a4-page {
-                zoom: 0.45; /* Shrinks the physical A4 page layout to 45% so it fits on a phone */
-            }
         }
 
         /* --- A4 Page Setup --- */
@@ -100,7 +103,12 @@
             grid-template-columns: 1fr 1fr;
             grid-template-rows: repeat(4, 1fr);
             gap: 5mm;
-            page-break-after: always; /* Tells the PDF library to split pages here */
+            page-break-after: always;
+        }
+
+        /* THE FIX: Prevents a blank page at the end of the PDF */
+        .a4-page:last-child {
+            page-break-after: auto;
         }
 
         /* --- Individual Label Styling --- */
@@ -117,78 +125,88 @@
         }
 
         .header-section { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px; }
-        .logo { width: 40px; height: auto; }
-        
-        /* Font forced to 18px and strictly nowrap to fit beside logo */
-        .header-section h1 { color: #7b3e6c; font-size: 22px; margin: 0; text-transform: uppercase; white-space: nowrap; }
-        
-        .sub-header { text-align: center; color: #7b3e6c; font-size: 12px; font-weight: bold; margin-bottom: 10px; line-height: 1.2; }
+        .logo { width: 45px; height: auto; }
+        .header-section h1 { color: #7b3e6c; font-size: 18px; margin: 0; text-transform: uppercase; white-space: nowrap; }
+        .sub-header { text-align: center; color: #7b3e6c; font-size: 14px; font-weight: bold; margin-bottom: 10px; line-height: 1.2; }
         .details-section { color: #2b7a4b; font-size: 14px; font-weight: bold; line-height: 1.5; }
         .details-section span { color: #2b55a1; }
+
+        /* --- Mobile Scale Fix --- */
+        @media (max-width: 767px) {
+            .preview-pane { align-items: flex-start; overflow-x: auto; }
+            .a4-page { zoom: 0.45; }
+        }
     </style>
 </head>
 <body>
 
     <div class="controls-pane">
-        <h2>Label Setup</h2>
-        
-        <div class="input-group">
-            <label>How many courses (labels) do you need?</label>
-            <input type="number" id="label-count" min="1" max="50" value="1">
+        <div>
+            <h2>Label Setup</h2>
+            
+            <div class="input-group">
+                <label>How many courses (labels) do you need?</label>
+                <input type="number" id="label-count" min="1" max="50" value="1">
+            </div>
+            <button onclick="generateCourseInputs()">Generate Forms</button>
+
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e5e7eb;">
+
+            <div id="form-container" style="display: none;">
+                <h3>1. Common Details</h3>
+                <p style="font-size: 12px; color: #6b7280; margin-top: -10px;">(Applies to all labels)</p>
+                
+                <div class="input-group">
+                    <label>Degree Name</label>
+                    <input type="text" id="common-degree" placeholder="e.g. DVM, Agriculture, AET" value="DVM">
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Level</label>
+                        <input type="number" id="common-level" min="1" max="5" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Semester</label>
+                        <input type="number" id="common-semester" min="1" max="2" value="1">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Date / Term Info</label>
+                    <input type="text" id="common-date" placeholder="e.g. (Jan-June/2025)">
+                </div>
+                <div class="input-group">
+                    <label>ID No.</label>
+                    <input type="text" id="common-id" placeholder="Your ID">
+                </div>
+                <div class="input-group">
+                    <label>Reg. No.</label>
+                    <input type="text" id="common-reg" placeholder="Your Registration Number">
+                </div>
+                
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Group</label>
+                        <input type="text" id="common-group" placeholder="Your Group">
+                    </div>
+                    <div class="input-group">
+                        <label>Session</label>
+                        <input type="text" id="common-session" placeholder="e.g. 2024-2025">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px;">2. Course Details</h3>
+                <div id="courses-wrapper">
+                    </div>
+
+                <button class="btn-print" onclick="downloadDirectly()">⬇️ Download PDF</button>
+            </div>
         </div>
-        <button onclick="generateCourseInputs()">Generate Forms</button>
 
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e5e7eb;">
-
-        <div id="form-container" style="display: none;">
-            <h3>1. Common Details</h3>
-            <p style="font-size: 12px; color: #6b7280; margin-top: -10px;">(Applies to all labels)</p>
-            
-            <div class="input-group">
-                <label>Degree Name</label>
-                <input type="text" id="common-degree" placeholder="e.g. DVM, Agriculture, AET" value="DVM">
-            </div>
-
-            <div class="input-row">
-                <div class="input-group">
-                    <label>Level</label>
-                    <input type="number" id="common-level" min="1" max="5" value="1">
-                </div>
-                <div class="input-group">
-                    <label>Semester</label>
-                    <input type="number" id="common-semester" min="1" max="2" value="1">
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label>Date / Term Info</label>
-                <input type="text" id="common-date" placeholder="e.g. (Jan-June/2025)">
-            </div>
-            <div class="input-group">
-                <label>ID No.</label>
-                <input type="text" id="common-id" placeholder="Your ID">
-            </div>
-            <div class="input-group">
-                <label>Reg. No.</label>
-                <input type="text" id="common-reg" placeholder="Your Registration Number">
-            </div>
-            
-            <div class="input-row">
-                <div class="input-group">
-                    <label>Group</label>
-                    <input type="text" id="common-group" placeholder="Your Group">
-                </div>
-                <div class="input-group">
-                    <label>Session</label>
-                    <input type="text" id="common-session" placeholder="e.g. 2024-2025">
-                </div>
-            </div>
-
-            <h3 style="margin-top: 20px;">2. Course Details</h3>
-            <div id="courses-wrapper">
-                </div>
-
-            <button class="btn-print" onclick="downloadDirectly()">⬇️ Download PDF</button>
+        <div class="developer-footer">
+            Developed by <strong>Shad Bin Ibne Kamal</strong><br>
+            DVM-64
         </div>
     </div>
 
@@ -288,19 +306,16 @@
         }
 
         function downloadDirectly() {
-            // Target the specific container holding the A4 pages
             const element = document.getElementById('pdf-content');
             
-            // Configuration for the html2pdf engine
             const options = {
                 margin:       0,
                 filename:     'BAU_Practical_Labels.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true }, // useCORS allows external images (like the placeholder logo) to load
+                html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Generate and force download
             html2pdf().set(options).from(element).save();
         }
     </script>
