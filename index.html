@@ -290,11 +290,19 @@
                 pdfContent.appendChild(pageDiv);
             });
         }
+        function downloadDirectly() {
+            // Prevent spam-clicking by showing a loading state
+            const btn = document.querySelector('.btn-print');
+            btn.innerHTML = "⏳ Generating... Please wait";
+            btn.disabled = true;
 
-       function downloadDirectly() {
             const element = document.getElementById('pdf-content');
+            const previewPane = document.getElementById('preview-area');
             
-            // 1. Temporarily disable the mobile zoom so the PDF captures at full 100% size
+            // 1. Destroy the mobile scroll boundaries that cause the image clipping
+            document.body.style.overflow = 'visible';
+            previewPane.style.overflow = 'visible';
+            
             const pages = document.querySelectorAll('.a4-page');
             pages.forEach(page => page.style.zoom = '1');
             
@@ -305,14 +313,21 @@
                 html2canvas:  { 
                     scale: 2, 
                     useCORS: true,
-                    windowWidth: 1024 // Forces the snapshot engine to ignore mobile CSS rules
+                    windowWidth: 1024, // Forces desktop width
+                    scrollY: 0, // Forces the engine to start looking from the absolute top
+                    scrollX: 0
                 },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // 2. Generate the PDF, and use .then() to restore the mobile zoom immediately after
+            // 2. Generate the PDF, then instantly restore the mobile view so nothing breaks
             html2pdf().set(options).from(element).save().then(() => {
+                document.body.style.overflow = '';
+                previewPane.style.overflow = '';
                 pages.forEach(page => page.style.zoom = '');
+                
+                btn.innerHTML = "⬇️ Download PDF";
+                btn.disabled = false;
             });
         }
     </script>
