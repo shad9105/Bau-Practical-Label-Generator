@@ -299,13 +299,13 @@
             const previewPane = document.getElementById('preview-area');
             const pages = document.querySelectorAll('.a4-page');
             
-            // 1. Check if the user is on a mobile device (screen width under 768px)
             const isMobile = window.innerWidth <= 767;
 
-            // 2. Only apply the anti-clipping hacks if on a mobile phone
+            // 1. Strip ALL scroll boundaries for EVERY device so nothing gets chopped off
+            document.body.style.overflow = 'visible';
+            previewPane.style.overflow = 'visible';
+            
             if (isMobile) {
-                document.body.style.overflow = 'visible';
-                previewPane.style.overflow = 'visible';
                 pages.forEach(page => page.style.zoom = '1');
             }
             
@@ -316,8 +316,8 @@
                 html2canvas:  { 
                     scale: 2, 
                     useCORS: true,
-                    // Force desktop width on mobile, otherwise use the native laptop width
-                    windowWidth: isMobile ? 1024 : window.innerWidth, 
+                    // 2. Force a massive virtual window (1200px) so the 794px A4 page is never squashed
+                    windowWidth: 1200, 
                     scrollY: 0,
                     scrollX: 0
                 },
@@ -326,10 +326,11 @@
 
             // 3. Generate the PDF
             html2pdf().set(options).from(element).save().then(() => {
-                // 4. Only restore the mobile layout if we actually changed it
+                // 4. Put the layout boundaries back exactly as they were
+                document.body.style.overflow = '';
+                previewPane.style.overflow = '';
+                
                 if (isMobile) {
-                    document.body.style.overflow = '';
-                    previewPane.style.overflow = '';
                     pages.forEach(page => page.style.zoom = '');
                 }
                 
