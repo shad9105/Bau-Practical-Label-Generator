@@ -71,6 +71,16 @@
             .controls-pane { width: 400px; height: 100%; overflow-y: auto; }
             .preview-pane { flex-grow: 1; height: 100%; overflow-y: auto; }
         }
+        /* --- Mobile Scale Fix --- */
+        @media (max-width: 767px) {
+            .preview-pane {
+                align-items: flex-start; /* Stops the left edge from getting clipped */
+                overflow-x: auto; /* Adds a scrollbar just in case it is still slightly too wide */
+            }
+            .a4-page {
+                zoom: 0.45; /* Shrinks the physical A4 page layout to 45% so it fits on a phone */
+            }
+        }
 
         /* --- A4 Page Setup --- */
         #pdf-content {
