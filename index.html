@@ -291,21 +291,29 @@
             });
         }
 
-        function downloadDirectly() {
-            // Target the specific container holding the A4 pages
+       function downloadDirectly() {
             const element = document.getElementById('pdf-content');
             
-            // Configuration for the html2pdf engine
+            // 1. Temporarily disable the mobile zoom so the PDF captures at full 100% size
+            const pages = document.querySelectorAll('.a4-page');
+            pages.forEach(page => page.style.zoom = '1');
+            
             const options = {
                 margin:       0,
                 filename:     'BAU_Practical_Labels.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true }, // useCORS allows external images (like the placeholder logo) to load
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true,
+                    windowWidth: 1024 // Forces the snapshot engine to ignore mobile CSS rules
+                },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Generate and force download
-            html2pdf().set(options).from(element).save();
+            // 2. Generate the PDF, and use .then() to restore the mobile zoom immediately after
+            html2pdf().set(options).from(element).save().then(() => {
+                pages.forEach(page => page.style.zoom = '');
+            });
         }
     </script>
 </body>
