@@ -291,20 +291,23 @@
             });
         }
         function downloadDirectly() {
-            // Prevent spam-clicking by showing a loading state
             const btn = document.querySelector('.btn-print');
             btn.innerHTML = "⏳ Generating... Please wait";
             btn.disabled = true;
 
             const element = document.getElementById('pdf-content');
             const previewPane = document.getElementById('preview-area');
-            
-            // 1. Destroy the mobile scroll boundaries that cause the image clipping
-            document.body.style.overflow = 'visible';
-            previewPane.style.overflow = 'visible';
-            
             const pages = document.querySelectorAll('.a4-page');
-            pages.forEach(page => page.style.zoom = '1');
+            
+            // 1. Check if the user is on a mobile device (screen width under 768px)
+            const isMobile = window.innerWidth <= 767;
+
+            // 2. Only apply the anti-clipping hacks if on a mobile phone
+            if (isMobile) {
+                document.body.style.overflow = 'visible';
+                previewPane.style.overflow = 'visible';
+                pages.forEach(page => page.style.zoom = '1');
+            }
             
             const options = {
                 margin:       0,
@@ -313,18 +316,22 @@
                 html2canvas:  { 
                     scale: 2, 
                     useCORS: true,
-                    windowWidth: 1024, // Forces desktop width
-                    scrollY: 0, // Forces the engine to start looking from the absolute top
+                    // Force desktop width on mobile, otherwise use the native laptop width
+                    windowWidth: isMobile ? 1024 : window.innerWidth, 
+                    scrollY: 0,
                     scrollX: 0
                 },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // 2. Generate the PDF, then instantly restore the mobile view so nothing breaks
+            // 3. Generate the PDF
             html2pdf().set(options).from(element).save().then(() => {
-                document.body.style.overflow = '';
-                previewPane.style.overflow = '';
-                pages.forEach(page => page.style.zoom = '');
+                // 4. Only restore the mobile layout if we actually changed it
+                if (isMobile) {
+                    document.body.style.overflow = '';
+                    previewPane.style.overflow = '';
+                    pages.forEach(page => page.style.zoom = '');
+                }
                 
                 btn.innerHTML = "⬇️ Download PDF";
                 btn.disabled = false;
