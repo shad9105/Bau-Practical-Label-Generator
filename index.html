@@ -290,7 +290,7 @@
                 pdfContent.appendChild(pageDiv);
             });
         }
-       function downloadDirectly() {
+   function downloadDirectly() {
             const btn = document.querySelector('.btn-print');
             btn.innerHTML = "⏳ Generating... Please wait";
             btn.disabled = true;
@@ -299,15 +299,19 @@
             const previewPane = document.getElementById('preview-area');
             const isMobile = window.innerWidth <= 767;
 
-            // 1. Force the layout to ignore mobile screen widths
+            // 1. THE LAPTOP FIX: Temporarily kill the centering.
+            // This shoves the layout to the absolute left edge so the engine cannot miscalculate the crop.
+            previewPane.style.alignItems = 'flex-start';
+            element.style.width = '210mm'; 
+            
+            // 2. THE MOBILE FIX: Strip the scroll boundaries so nothing gets cut off the bottom.
             document.body.style.overflow = 'visible';
             previewPane.style.overflow = 'visible';
-            element.style.minWidth = '800px'; // strictly force desktop width
             
             const pages = document.querySelectorAll('.a4-page');
             pages.forEach(page => {
                 if (isMobile) page.style.zoom = '1';
-                // 2. Shrink height by 1mm to eliminate the blank page bug
+                // Shrink height by a fraction to eliminate the phantom blank page bug
                 page.style.height = '296mm'; 
             });
             
@@ -318,7 +322,6 @@
                 html2canvas:  { 
                     scale: 2, 
                     useCORS: true,
-                    windowWidth: 800, // Must match the minWidth above
                     scrollY: 0,
                     scrollX: 0
                 },
@@ -327,14 +330,15 @@
 
             // 3. Generate the PDF
             html2pdf().set(options).from(element).save().then(() => {
-                // 4. Restore the mobile view back to normal
+                // 4. Instantly restore all centering and styling so the screen looks completely normal again
+                previewPane.style.alignItems = 'center';
+                element.style.width = '100%';
                 document.body.style.overflow = '';
                 previewPane.style.overflow = '';
-                element.style.minWidth = '';
                 
                 pages.forEach(page => {
                     if (isMobile) page.style.zoom = '';
-                    page.style.height = '297mm'; // Restore strict A4 height
+                    page.style.height = '297mm';
                 });
                 
                 btn.innerHTML = "⬇️ Download PDF";
